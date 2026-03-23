@@ -139,7 +139,7 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px;font-wei
   <!-- DB status bar -->
   <div class="db-bar" id="db-bar">
     <div class="db-dot" id="db-dot" style="background:var(--amber)"></div>
-    <span id="db-label">Connecting to MongoDB…</span>
+    <span id="db-label">LocalStorage mode — all data saved in your browser</span>
   </div>
 
   <!-- SCHEDULE TAB -->
@@ -306,7 +306,154 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px;font-wei
 // ─────────────────────────────────────────────────────────────
 //  CONFIG
 // ─────────────────────────────────────────────────────────────
-const API = 'https://flowsync-api.onrender.com';
+// ─────────────────────────────────────────────────────────────
+//  LOCAL STORAGE MOCK BACKEND
+//  Replaces all API calls with localStorage — works fully offline
+// ─────────────────────────────────────────────────────────────
+const API = ''; // unused — all calls intercepted below
+
+const DB = {
+  get(key) { try { return JSON.parse(localStorage.getItem('fs_'+key)||'null'); } catch{return null;} },
+  set(key, val) { localStorage.setItem('fs_'+key, JSON.stringify(val)); },
+  del(key) { localStorage.removeItem('fs_'+key); },
+  keys(prefix) { return Object.keys(localStorage).filter(k=>k.startsWith('fs_'+prefix)).map(k=>k.slice(3)); }
+};
+
+// Seed demo user on first load
+(function seedDemo(){
+  if(!DB.get('user:demo')){
+    DB.set('user:demo',{username:'demo',name:'Demo User',password:'demo',createdAt:new Date().toISOString(),lastLogin:new Date().toISOString()});
+  }
+})();
+
+// Mock fetch intercept
+async function call(method, path, body) {
+  await new Promise(r=>setTimeout(r,60)); // simulate latency
+  path = path.replace(/^\//, '');
+  const seg = path.split('/');
+
+  // Health
+  if(seg[0]==='health') return {ok:true, db:'LocalStorage (offline mode)'};
+
+  // Auth
+  if(seg[0]==='login') {
+    const u = DB.get('user:'+body.username);
+    if(!u || u.password !== body.password) throw new Error('Invalid username or password');
+    u.lastLogin = new Date().toISOString(); DB.set('user:'+u.username, u);
+    return {username:u.username, name:u.name};
+  }
+  if(seg[0]==='register') {
+    if(!/^[a-zA-Z0-9_]+$/.test(body.username)) throw new Error('Username: letters, numbers and _ only');
+    if(DB.get('user:'+body.username)) throw new Error('Username already taken');
+    const u={username:body.username,name:body.name,password:body.password,createdAt:new Date().toISOString(),lastLogin:new Date().toISOString()};
+    DB.set('user:'+u.username, u);
+    return {username:u.username, name:u.name};
+  }
+
+  // Schedules
+  if(seg[0]==='schedules') {
+    const uname = seg[1];
+    const sname = seg[2] ? decodeURIComponent(seg[2]) : null;
+    if(method==='GET') {
+      const keys = DB.keys('sched:'+uname+':');
+      return keys.map(k=>DB.get(k)).filter(Boolean);
+    }
+    if(method==='POST') {
+      DB.set('sched:'+uname+':'+body.name, {name:body.name, slots:body.slots, username:uname});
+      return {ok:true};
+    }
+    if(method==='DELETE' && sname) {
+      DB.del('sched:'+uname+':'+sname);
+      return {ok:true};
+    }
+  }
+
+  // Weekly plans
+  if(seg[0]==='weeklyplans') {
+    const uname = seg[1];
+    const pname = seg[2] ? decodeURIComponent(seg[2]) : null;
+    if(method==='GET') {
+      const keys = DB.keys('wp:'+uname+':');
+      return keys.map(k=>DB.get(k)).filter(Boolean);
+    }
+    if(method==='POST') {
+      DB.set('wp:'+uname+':'+body.name, {name:body.name, days:body.days, username:uname});
+      return {ok:true};
+    }
+    if(method==='DELETE' && pname) {
+      DB.del('wp:'+uname+':'+pname);
+      return {ok:true};
+    }
+  }
+
+  // Applied ranges
+  if(seg[0]==='appliedranges') {
+    const uname = seg[1];
+    if(method==='GET') {
+      return DB.get('ranges:'+uname) || [];
+    }
+    if(method==='POST') {
+      const arr = DB.get('ranges:'+uname) || [];
+      arr.unshift({...body, appliedAt:new Date().toISOString()});
+      DB.set('ranges:'+uname, arr.slice(0,20));
+      return {ok:true};
+    }
+  }
+
+  // Tracker
+  if(seg[0]==='tracker') {
+    const uname = seg[1];
+    const date = seg[2];
+    if(method==='GET') {
+      const dateParam = (path.includes('?dates=') ? path.split('?dates=')[1] : '').split(',').filter(Boolean);
+      if(dateParam.length) return dateParam.map(d=>DB.get('track:'+uname+':'+d)).filter(Boolean);
+      return [];
+    }
+    if(method==='POST') {
+      const existing = DB.get('track:'+uname+':'+body.date);
+      if(!existing) DB.set('track:'+uname+':'+body.date, body);
+      return {ok:true};
+    }
+    if(method==='PATCH') {
+      const doc = DB.get('track:'+uname+':'+date);
+      if(doc) { Object.assign(doc, body); DB.set('track:'+uname+':'+date, doc); }
+      return {ok:true};
+    }
+  }
+
+  // Admin
+  if(seg[0]==='admin') {
+    if(seg[1]==='stats') {
+      const ukeys = DB.keys('user:');
+      const skeys = DB.keys('sched:');
+      const wkeys = DB.keys('wp:');
+      const tkeys = DB.keys('track:');
+      let done=0,tot=0;
+      tkeys.forEach(k=>{ const d=DB.get(k); if(d) Object.values(d.tasks||{}).forEach(v=>{if(v===true){done++;tot++;}else if(v===false)tot++;}); });
+      return {users:ukeys.length,schedules:skeys.length,weeklyplans:wkeys.length,trackerdays:tkeys.length,doneTasks:done,globalPct:tot?Math.round(done/tot*100):0};
+    }
+    if(seg[1]==='users') {
+      if(method==='DELETE') {
+        const uname=seg[2];
+        DB.del('user:'+uname);
+        DB.keys('sched:'+uname+':').forEach(k=>DB.del(k));
+        DB.keys('wp:'+uname+':').forEach(k=>DB.del(k));
+        DB.keys('track:'+uname+':').forEach(k=>DB.del(k));
+        DB.del('ranges:'+uname);
+        return {ok:true};
+      }
+      return DB.keys('user:').map(k=>DB.get(k)).filter(Boolean);
+    }
+    if(seg[1]==='schedules') return DB.keys('sched:').map(k=>DB.get(k)).filter(Boolean);
+    if(seg[1]==='tracker') return DB.keys('track:').map(k=>DB.get(k)).filter(Boolean);
+  }
+
+  throw new Error('Unknown route: '+method+' /'+path);
+}
+const GET  = (p)   => call('GET',p);
+const POST = (p,b) => call('POST',p,b);
+const PATCH= (p,b) => call('PATCH',p,b);
+const DEL  = (p)   => call('DELETE',p);
 
 const CAT_C={health:'#00b894',work:'#6c5ce7',personal:'#fd79a8',break:'#74b9ff',social:'#fdcb6e',creative:'#e17055',other:'#a29bfe'};
 const CAT_L={health:'Health',work:'Work',personal:'Personal',break:'Break',social:'Social',creative:'Creative',other:'Other'};
@@ -355,28 +502,6 @@ function loading(id,on,label=''){
   else if(label)b.innerHTML=label;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  API HELPER
-// ─────────────────────────────────────────────────────────────
-async function call(method,path,body){
-  try{
-    const r=await fetch(API+path,{
-      method,
-      headers:{'Content-Type':'application/json'},
-      body:body?JSON.stringify(body):undefined
-    });
-    const data=await r.json();
-    if(!r.ok)throw new Error(data.error||'Request failed ('+r.status+')');
-    return data;
-  }catch(e){
-    if(e.name==='TypeError')throw new Error('Cannot reach server — is the backend running?');
-    throw e;
-  }
-}
-const GET =(p)=>call('GET',p);
-const POST=(p,b)=>call('POST',p,b);
-const PATCH=(p,b)=>call('PATCH',p,b);
-const DEL =(p)=>call('DELETE',p);
 
 // ─────────────────────────────────────────────────────────────
 //  SERVER STATUS CHECK
