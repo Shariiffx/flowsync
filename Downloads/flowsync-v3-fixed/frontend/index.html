@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowSync</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070d;--bg2:#0f0f1a;--bg3:#161624;--bg4:#1e1e30;--bg5:#26263a;
+  --border:#252538;--border2:#32324a;--border3:#404058;
+  --text:#f0f0fa;--text2:#8888aa;--text3:#4a4a66;
+  --accent:#6c5ce7;--accent2:#a29bfe;--accent3:#d6d0ff;
+  --green:#00b894;--green2:#00634f;--green3:#002f25;
+  --amber:#fdcb6e;--amber2:#6b4f00;
+  --red:#e17055;--red2:#6b2a1a;
+  --blue:#74b9ff;--blue2:#1a3a6b;
+  --r:8px;--r2:14px;--r3:20px;--pill:999px;
+  font-family:'Outfit',sans-serif;color:var(--text);
+}
+body{background:var(--bg);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.screen{display:none;min-height:100vh;flex-direction:column}.screen.active{display:flex}
+input,select,textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:var(--r);padding:10px 14px;font-family:'Outfit',sans-serif;font-size:14px;width:100%;outline:none;transition:all .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);background:var(--bg4)}
+select option{background:var(--bg3)}
+button{font-family:'Outfit',sans-serif;cursor:pointer;border:none;border-radius:var(--r);padding:10px 18px;font-size:14px;font-weight:500;transition:all .15s}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent2);color:#000}.btn-p:disabled{opacity:.4;cursor:default}
+.btn-g{background:transparent;color:var(--text2);border:1px solid var(--border2)}.btn-g:hover{background:var(--bg3);color:var(--text)}
+.btn-sm{padding:6px 14px;font-size:13px}.btn-xs{padding:4px 10px;font-size:12px}
+.btn-d{background:var(--red2);color:var(--red);border:1px solid #5a2010}.btn-d:hover{background:#7a3020}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px}
+.card-flat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px}
+label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px;font-weight:500;letter-spacing:.3px}
+.field{margin-bottom:14px}
+.nav{display:flex;align-items:center;padding:0 20px;border-bottom:1px solid var(--border);background:var(--bg);height:52px;flex-shrink:0;gap:6px}
+.logo{font-size:17px;font-weight:600;letter-spacing:-.3px}.logo em{color:var(--accent);font-style:normal}
+.ntabs{display:flex;gap:2px;margin-left:auto}
+.ntab{padding:6px 14px;border-radius:var(--pill);font-size:13px;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;border:none;font-family:'Outfit',sans-serif}
+.ntab.active{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.ntab:hover:not(.active){color:var(--text)}
+.uchip{display:flex;align-items:center;gap:7px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--pill);font-size:13px;color:var(--text2);cursor:pointer;margin-left:10px}
+.av{width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0}
+.segtabs{display:flex;background:var(--bg3);border-radius:var(--r);padding:3px;margin-bottom:18px;border:1px solid var(--border)}
+.segtab{flex:1;text-align:center;padding:7px 10px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s}
+.segtab.active{background:var(--bg);color:var(--text);font-weight:500;border:1px solid var(--border2)}
+.tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:var(--pill);font-size:11px;font-weight:500}
+.tag-p{background:#1a1840;color:var(--accent2)}.tag-g{background:var(--green3);color:var(--green)}
+.tag-a{background:var(--amber2);color:var(--amber)}.tag-r{background:var(--red2);color:var(--red)}.tag-b{background:var(--blue2);color:var(--blue)}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:16px;text-align:center}
+.stat-num{font-size:28px;font-weight:600;font-family:'JetBrains Mono',monospace;margin-top:4px;letter-spacing:-1px}
+.prog{height:5px;border-radius:3px;background:var(--bg4);overflow:hidden}
+.prog-f{height:100%;border-radius:3px;transition:width .5s ease}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r3);padding:24px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 22px;font-size:13px;z-index:999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.slot-card{background:var(--bg4);border:1px solid var(--accent);border-radius:var(--r2);padding:13px 15px;transition:all .2s;position:relative;cursor:pointer}
+.slot-card:hover{background:var(--bg5)}
+.add-slot-btn{background:transparent;border:1px dashed var(--border2);border-radius:var(--r2);padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--text3);font-size:13px;transition:all .2s;font-family:'Outfit',sans-serif;width:100%}
+.add-slot-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--bg4)}
+.check-item{display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);margin-bottom:8px;cursor:pointer;transition:all .18s;user-select:none;-webkit-tap-highlight-color:transparent}
+.check-item:hover:not(.future){background:var(--bg4);border-color:var(--border3)}
+.check-item.done{background:var(--green3);border-color:var(--green2)}
+.check-item.done:hover{background:#003d30}
+.check-item.missed{background:var(--red2);border-color:#7a3020}
+.check-item.missed:hover{background:#7a3020}
+.check-item.future{opacity:.3;cursor:not-allowed}
+.checkbox{width:30px;height:30px;border-radius:8px;border:2px solid var(--border3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s;font-size:16px;font-weight:700;background:var(--bg4)}
+.check-item:hover:not(.done):not(.missed):not(.future) .checkbox{border-color:var(--accent);background:var(--bg5)}
+.check-item.done .checkbox{background:var(--green);border-color:var(--green);color:#fff}
+.check-item.missed .checkbox{background:var(--red);border-color:var(--red);color:#fff}
+.check-label{flex:1;min-width:0}
+.check-name{font-size:14px;font-weight:500}
+.check-time-row{font-size:12px;color:var(--text2);margin-top:2px;font-family:'JetBrains Mono',monospace}
+.check-badge{font-size:12px;font-weight:600;padding:4px 12px;border-radius:var(--pill);flex-shrink:0}
+.day-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:14px}
+.day-panel.today{border-color:var(--accent)}
+.day-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.db-bar{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);flex-shrink:0}
+.db-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:9px 12px;text-align:left;font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);background:var(--bg3)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--bg3)}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div class="screen active" id="screen-auth">
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="width:100%;max-width:340px">
+      <div style="text-align:center;margin-bottom:30px">
+        <div class="logo" style="font-size:30px;display:block;margin-bottom:8px">flow<em>sync</em></div>
+        <div style="font-size:13px;color:var(--text2)">Build habits. Track consistency.</div>
+        <div id="srv-status" style="margin-top:10px;font-size:12px;color:var(--text3)">checking server…</div>
+      </div>
+      <div class="segtabs" id="auth-tabs">
+        <div class="segtab active" onclick="switchAuth('login')">Sign in</div>
+        <div class="segtab" onclick="switchAuth('register')">Create account</div>
+      </div>
+      <div id="auth-err" style="display:none;background:var(--red2);border:1px solid #5a2010;color:var(--red);border-radius:var(--r);padding:10px 14px;font-size:13px;margin-bottom:14px"></div>
+      <div id="f-login">
+        <div class="field"><label>Username</label><input id="l-user" placeholder="Enter username" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <div class="field"><label>Password</label><input id="l-pass" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+        <button class="btn-p" style="width:100%;padding:12px;font-size:15px" id="btn-login" onclick="doLogin()">Sign in</button>
+      </div>
+      <div id="f-reg" style="display:none">
+        <div class="field"><label>Full name</label><input id="r-name" placeholder="Your name"/></div>
+        <div class="field"><label>Username</label><input id="r-user" placeholder="Choose a username (letters/numbers/_)"/></div>
+        <div class="field"><label>Password</label><input id="r-pass" type="password" placeholder="Create a password"/></div>
+        <button class="btn-p" style="width:100%;padding:12px;font-size:15px" id="btn-reg" onclick="doRegister()">Create account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="screen" id="screen-app">
+  <div class="nav">
+    <div class="logo">flow<em>sync</em></div>
+    <div class="ntabs">
+      <button class="ntab active" id="nt-schedule" onclick="switchTab('schedule')">Schedule</button>
+      <button class="ntab" id="nt-tracker"  onclick="switchTab('tracker')">Tracker</button>
+      <button class="ntab" id="nt-insights" onclick="switchTab('insights')">Insights</button>
+      <button class="ntab" id="nt-admin"    onclick="switchTab('admin')" style="color:var(--amber)">Admin DB</button>
+    </div>
+    <div class="uchip" onclick="logout()">
+      <div class="av" id="nav-av">U</div>
+      <span id="nav-name">User</span>
+      <span style="font-size:10px;color:var(--text3)">sign out</span>
+    </div>
+  </div>
+  <!-- DB status bar -->
+  <div class="db-bar" id="db-bar">
+    <div class="db-dot" id="db-dot" style="background:var(--amber)"></div>
+    <span id="db-label">Connecting to MongoDB…</span>
+  </div>
+
+  <!-- SCHEDULE TAB -->
+  <div id="tc-schedule" style="flex:1;overflow-y:auto;padding:20px 24px">
+    <div style="max-width:860px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:20px;font-weight:600">Schedule builder</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:3px">Create custom time blocks → weekly plan → apply to calendar</div>
+        </div>
+        <button class="btn-p btn-sm" onclick="newSched()">+ New schedule</button>
+      </div>
+      <div class="segtabs" id="st-tabs">
+        <div class="segtab active" onclick="switchST('daily')">1. Daily blocks</div>
+        <div class="segtab" onclick="switchST('weekly')">2. Weekly plan</div>
+        <div class="segtab" onclick="switchST('apply')">3. Apply to calendar</div>
+      </div>
+      <div id="st-daily">
+        <div style="display:flex;gap:10px;margin-bottom:18px;align-items:flex-end;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px"><label>Schedule name</label><input id="sched-name" placeholder="e.g. Weekday routine, Holiday plan…"/></div>
+          <button class="btn-g btn-sm" onclick="saveSchedule()">Save schedule</button>
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Add your own time blocks — set any start &amp; end time:</div>
+        <div id="slots-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:10px"></div>
+        <button class="add-slot-btn" onclick="openAddSlot()"><span style="font-size:20px;line-height:1">+</span> Add time block</button>
+        <div id="saved-scheds" style="margin-top:26px"></div>
+      </div>
+      <div id="st-weekly" style="display:none">
+        <div class="field"><label>Weekly plan name</label><input id="wp-name" placeholder="e.g. My standard week"/></div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Assign a schedule to each day:</div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px" id="wd-grid"></div>
+        <button class="btn-p btn-sm" onclick="saveWeeklyPlan()">Save weekly plan</button>
+        <div id="saved-wps" style="margin-top:22px"></div>
+      </div>
+      <div id="st-apply" style="display:none">
+        <div class="card" style="margin-bottom:14px">
+          <div style="font-size:15px;font-weight:600;margin-bottom:16px">Apply weekly plan to your calendar</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label>Weekly plan</label><select id="ap-plan"><option value="">-- choose --</option></select></div>
+            <div class="field"><label>From date</label><input type="date" id="ap-from"/></div>
+            <div class="field"><label>To date</label><input type="date" id="ap-to"/></div>
+            <div class="field"><label>Repeat pattern</label>
+              <select id="ap-repeat">
+                <option value="allweeks">Same every week</option>
+                <option value="month">Month by month</option>
+                <option value="year">Full year</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-p btn-sm" id="btn-apply" onclick="applyCalendar()">Apply to calendar</button>
+        </div>
+        <div id="applied-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACKER TAB -->
+  <div id="tc-tracker" style="display:none;flex:1;overflow-y:auto;padding:20px 24px">
+    <div style="max-width:860px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:20px;font-weight:600">Daily tracker</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:3px">Tap a task to mark it — cycles: empty → Done ✓ → Missed ✗ → empty</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn-g btn-sm" onclick="navW(-1)">← Prev</button>
+          <span id="wk-lbl" style="font-size:12px;color:var(--text2);min-width:150px;text-align:center;font-family:'JetBrains Mono',monospace"></span>
+          <button class="btn-g btn-sm" onclick="navW(1)">Next →</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap;padding:12px 16px;background:var(--bg3);border-radius:var(--r2);border:1px solid var(--border)">
+        <span style="font-size:12px;color:var(--text3);font-weight:500">How to use:</span>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">
+          <div style="width:22px;height:22px;border-radius:5px;border:2px solid var(--border3);background:var(--bg4)"></div>Tap once → Done
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green)">
+          <div style="width:22px;height:22px;border-radius:5px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700">✓</div>Tap again → Missed
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--red)">
+          <div style="width:22px;height:22px;border-radius:5px;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700">✗</div>Tap again → Reset
+        </div>
+      </div>
+      <div id="tracker-view"></div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS TAB -->
+  <div id="tc-insights" style="display:none;flex:1;overflow-y:auto;padding:20px 24px">
+    <div style="max-width:860px;margin:0 auto">
+      <div style="font-size:20px;font-weight:600;margin-bottom:20px">Consistency insights</div>
+      <div class="segtabs" id="ins-tabs">
+        <div class="segtab active" onclick="switchIns('week')">This week</div>
+        <div class="segtab" onclick="switchIns('month')">This month</div>
+        <div class="segtab" onclick="switchIns('year')">This year</div>
+      </div>
+      <div id="ins-content"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN TAB -->
+  <div id="tc-admin" style="display:none;flex:1;overflow-y:auto;padding:20px 24px">
+    <div style="max-width:980px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:20px;font-weight:600">Admin — MongoDB Atlas</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:3px">Live data from your <span style="color:var(--accent)">flowsync</span> database</div>
+        </div>
+        <button class="btn-g btn-sm" onclick="loadAdmin()">↻ Refresh</button>
+      </div>
+      <div id="adm-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px"></div>
+      <div class="segtabs" id="adm-tabs">
+        <div class="segtab active" onclick="switchAdm('users')">Users</div>
+        <div class="segtab" onclick="switchAdm('schedules')">Schedules</div>
+        <div class="segtab" onclick="switchAdm('tracker')">Tracker data</div>
+      </div>
+      <div id="adm-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLOT MODAL -->
+<div class="modal-bg" id="slot-modal" style="display:none" onclick="closeSlotModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-size:16px;font-weight:600" id="slot-modal-title">Add time block</div>
+      <button class="btn-g btn-sm" onclick="closeSlotModal()">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Start time</label><input type="time" id="slot-start" value="06:00"/></div>
+      <div class="field"><label>End time</label><input type="time" id="slot-end" value="07:00"/></div>
+    </div>
+    <div class="field"><label>Task / activity name</label><input id="slot-task" placeholder="e.g. Morning run, Deep work, Reading…"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Category</label>
+        <select id="slot-cat">
+          <option value="health">Health &amp; fitness</option>
+          <option value="work">Work &amp; study</option>
+          <option value="personal">Personal growth</option>
+          <option value="break">Break &amp; rest</option>
+          <option value="social">Social</option>
+          <option value="creative">Creative</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Priority</label>
+        <select id="slot-pri">
+          <option value="high">High</option>
+          <option value="medium" selected>Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+      <button class="btn-d btn-sm" id="slot-del-btn" style="display:none" onclick="deleteSlot()">Delete</button>
+      <button class="btn-g btn-sm" onclick="closeSlotModal()">Cancel</button>
+      <button class="btn-p btn-sm" onclick="saveSlot()">Save block</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────────────────────
+const API = 'http://localhost:3001/api';
+
+const CAT_C={health:'#00b894',work:'#6c5ce7',personal:'#fd79a8',break:'#74b9ff',social:'#fdcb6e',creative:'#e17055',other:'#a29bfe'};
+const CAT_L={health:'Health',work:'Work',personal:'Personal',break:'Break',social:'Social',creative:'Creative',other:'Other'};
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAYS_FULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// ─────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────
+let currentUser=null, currentSlots=[], editingSlotIdx=null;
+let wkOffset=0, insPeriod='week', admTab='users';
+
+// ─────────────────────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────────────────────
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function fmtD(s){return new Date(s+'T12:00:00').toLocaleDateString('en',{month:'short',day:'numeric'});}
+function fmtDT(s){return new Date(s).toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});}
+function S2(n){return String(n).padStart(2,'0');}
+function fmtTime(t){
+  if(!t)return'';
+  const[h,m]=t.split(':').map(Number);
+  return(h%12||12)+':'+(m<10?'0':'')+m+' '+(h>=12?'PM':'AM');
+}
+function getWkDates(off){
+  const now=new Date(),dow=now.getDay(),mon=new Date(now);
+  mon.setDate(now.getDate()-dow+off*7);
+  return Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d.toISOString().slice(0,10);});
+}
+function getWN(d){const j=new Date(d.getFullYear(),0,1);return Math.ceil((((d-j)/86400000)+j.getDay()+1)/7);}
+
+let _tt;
+function toast(msg,type='green'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.color=type==='red'?'var(--red)':type==='amber'?'var(--amber)':'var(--green)';
+  el.classList.add('show');clearTimeout(_tt);
+  _tt=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+function loading(id,on,label=''){
+  const b=document.getElementById(id);if(!b)return;
+  b.disabled=on;
+  if(on)b.innerHTML='<span class="spin"></span> Please wait…';
+  else if(label)b.innerHTML=label;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  API HELPER
+// ─────────────────────────────────────────────────────────────
+async function call(method,path,body){
+  try{
+    const r=await fetch(API+path,{
+      method,
+      headers:{'Content-Type':'application/json'},
+      body:body?JSON.stringify(body):undefined
+    });
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Request failed ('+r.status+')');
+    return data;
+  }catch(e){
+    if(e.name==='TypeError')throw new Error('Cannot reach server — is the backend running?');
+    throw e;
+  }
+}
+const GET =(p)=>call('GET',p);
+const POST=(p,b)=>call('POST',p,b);
+const PATCH=(p,b)=>call('PATCH',p,b);
+const DEL =(p)=>call('DELETE',p);
+
+// ─────────────────────────────────────────────────────────────
+//  SERVER STATUS CHECK
+// ─────────────────────────────────────────────────────────────
+async function checkServer(){
+  const dot=document.getElementById('db-dot');
+  const lbl=document.getElementById('db-label');
+  const srv=document.getElementById('srv-status');
+  try{
+    const d=await GET('/health');
+    dot.style.background='var(--green)';
+    lbl.textContent='MongoDB connected — '+d.db;
+    if(srv)srv.innerHTML='<span style="color:var(--green)">● Server online</span>';
+  }catch(e){
+    dot.style.background='var(--red)';
+    lbl.textContent='Backend offline — start server first (npm start)';
+    if(srv)srv.innerHTML='<span style="color:var(--red)">● '+e.message+'</span>';
+  }
+}
+checkServer();
+setInterval(checkServer,30000);
+
+// ─────────────────────────────────────────────────────────────
+//  AUTH
+// ─────────────────────────────────────────────────────────────
+function switchAuth(t){
+  document.getElementById('f-login').style.display=t==='login'?'block':'none';
+  document.getElementById('f-reg').style.display=t==='register'?'block':'none';
+  document.querySelectorAll('#auth-tabs .segtab').forEach((el,i)=>el.classList.toggle('active',['login','register'][i]===t));
+  document.getElementById('auth-err').style.display='none';
+}
+function authErr(m){const el=document.getElementById('auth-err');el.textContent=m;el.style.display='block';}
+
+async function doLogin(){
+  const username=document.getElementById('l-user').value.trim();
+  const password=document.getElementById('l-pass').value;
+  if(!username||!password){authErr('Please fill in all fields');return;}
+  loading('btn-login',true);
+  try{
+    const d=await POST('/login',{username,password});
+    loginOk(d.username,d.name);
+  }catch(e){authErr(e.message);}
+  loading('btn-login',false,'Sign in');
+}
+
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const username=document.getElementById('r-user').value.trim();
+  const password=document.getElementById('r-pass').value;
+  if(!name||!username||!password){authErr('Please fill in all fields');return;}
+  loading('btn-reg',true);
+  try{
+    await POST('/register',{name,username,password});
+    loginOk(username,name);
+  }catch(e){authErr(e.message);}
+  loading('btn-reg',false,'Create account');
+}
+
+function loginOk(username,name){
+  currentUser={username,name};
+  document.getElementById('screen-auth').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  document.getElementById('nav-name').textContent=name.split(' ')[0];
+  document.getElementById('nav-av').textContent=name[0].toUpperCase();
+  currentSlots=[];wkOffset=0;
+  setDefaultDates();
+  switchTab('schedule');
+  renderSlotsUI();
+  renderSavedScheds();
+}
+
+function logout(){
+  currentUser=null;
+  document.getElementById('screen-app').classList.remove('active');
+  document.getElementById('screen-auth').classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TAB SWITCHING
+// ─────────────────────────────────────────────────────────────
+function switchTab(t){
+  ['schedule','tracker','insights','admin'].forEach(x=>{
+    const el=document.getElementById('tc-'+x);
+    el.style.display=x===t?'flex':'none';
+    if(x===t)el.style.flexDirection='column';
+    document.getElementById('nt-'+x).classList.toggle('active',x===t);
+  });
+  if(t==='tracker')renderTracker();
+  if(t==='insights')renderInsights();
+  if(t==='admin')loadAdmin();
+}
+function switchST(t){
+  ['daily','weekly','apply'].forEach(x=>document.getElementById('st-'+x).style.display=x===t?'block':'none');
+  document.querySelectorAll('#st-tabs .segtab').forEach((el,i)=>el.classList.toggle('active',['daily','weekly','apply'][i]===t));
+  if(t==='weekly'){renderWDGrid();renderSavedWPs();}
+  if(t==='apply'){loadWPsForSelect();renderApplied();}
+}
+function switchIns(t){
+  insPeriod=t;
+  document.querySelectorAll('#ins-tabs .segtab').forEach((el,i)=>el.classList.toggle('active',['week','month','year'][i]===t));
+  renderInsights();
+}
+function switchAdm(t){
+  admTab=t;
+  document.querySelectorAll('#adm-tabs .segtab').forEach((el,i)=>el.classList.toggle('active',['users','schedules','tracker'][i]===t));
+  renderAdmContent();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SCHEDULE — CUSTOM SLOTS
+// ─────────────────────────────────────────────────────────────
+function renderSlotsUI(){
+  const g=document.getElementById('slots-list');if(!g)return;
+  if(!currentSlots.length){
+    g.innerHTML='<div style="font-size:13px;color:var(--text3);padding:6px 0">No time blocks yet — click below to add one.</div>';return;
+  }
+  const sorted=[...currentSlots].sort((a,b)=>a.start.localeCompare(b.start));
+  g.innerHTML=sorted.map(s=>{
+    const idx=currentSlots.findIndex(x=>x.id===s.id);
+    const c=CAT_C[s.cat]||'var(--accent2)';
+    return`<div class="slot-card" onclick="openEditSlot(${idx})">
+      <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-bottom:4px">${fmtTime(s.start)} – ${fmtTime(s.end)}</div>
+      <div style="font-size:13px;font-weight:600">${s.task}</div>
+      <div style="font-size:11px;margin-top:3px;color:${c}">${CAT_L[s.cat]||s.cat} · ${s.priority}</div>
+      <div style="position:absolute;top:10px;right:12px;font-size:11px;color:var(--text3)">✎</div>
+    </div>`;
+  }).join('');
+}
+
+function openAddSlot(){
+  editingSlotIdx=null;
+  document.getElementById('slot-modal-title').textContent='Add time block';
+  document.getElementById('slot-start').value='06:00';
+  document.getElementById('slot-end').value='07:00';
+  document.getElementById('slot-task').value='';
+  document.getElementById('slot-cat').value='health';
+  document.getElementById('slot-pri').value='medium';
+  document.getElementById('slot-del-btn').style.display='none';
+  document.getElementById('slot-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('slot-task').focus(),100);
+}
+function openEditSlot(idx){
+  editingSlotIdx=idx;const s=currentSlots[idx];
+  document.getElementById('slot-modal-title').textContent='Edit time block';
+  document.getElementById('slot-start').value=s.start;
+  document.getElementById('slot-end').value=s.end;
+  document.getElementById('slot-task').value=s.task;
+  document.getElementById('slot-cat').value=s.cat;
+  document.getElementById('slot-pri').value=s.priority;
+  document.getElementById('slot-del-btn').style.display='';
+  document.getElementById('slot-modal').style.display='flex';
+}
+function closeSlotModal(e){if(!e||e.target===document.getElementById('slot-modal'))document.getElementById('slot-modal').style.display='none';}
+function saveSlot(){
+  const start=document.getElementById('slot-start').value;
+  const end=document.getElementById('slot-end').value;
+  const task=document.getElementById('slot-task').value.trim();
+  if(!task){document.getElementById('slot-task').focus();toast('Enter a task name','amber');return;}
+  const slot={id:editingSlotIdx!==null?currentSlots[editingSlotIdx].id:uid(),start,end,task,cat:document.getElementById('slot-cat').value,priority:document.getElementById('slot-pri').value};
+  if(editingSlotIdx!==null)currentSlots[editingSlotIdx]=slot;
+  else currentSlots.push(slot);
+  closeSlotModal();renderSlotsUI();
+}
+function deleteSlot(){if(editingSlotIdx===null)return;currentSlots.splice(editingSlotIdx,1);closeSlotModal();renderSlotsUI();}
+function newSched(){currentSlots=[];document.getElementById('sched-name').value='';renderSlotsUI();switchST('daily');}
+
+async function saveSchedule(){
+  const name=document.getElementById('sched-name').value.trim();
+  if(!name){document.getElementById('sched-name').focus();return;}
+  if(!currentSlots.length){toast('Add at least one time block','amber');return;}
+  try{
+    await POST('/schedules',{username:currentUser.username,name,slots:[...currentSlots]});
+    currentSlots=[];document.getElementById('sched-name').value='';
+    renderSlotsUI();renderSavedScheds();toast('"'+name+'" saved to MongoDB ✓');
+  }catch(e){toast(e.message,'red');}
+}
+
+async function renderSavedScheds(){
+  const el=document.getElementById('saved-scheds');if(!el)return;
+  el.innerHTML='<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:500">Saved schedules <span class="spin"></span></div>';
+  try{
+    const scheds=await GET('/schedules/'+currentUser.username);
+    if(!scheds.length){el.innerHTML='<div style="font-size:13px;color:var(--text3)">No saved schedules yet.</div>';return;}
+    el.innerHTML='<div style="font-size:13px;color:var(--text2);margin-bottom:12px;font-weight:500">Saved schedules <span class="tag tag-g">'+scheds.length+' in MongoDB</span></div>'
+      +scheds.map(s=>{
+        const sorted=[...s.slots].sort((a,b)=>a.start.localeCompare(b.start));
+        return`<div class="card" style="margin-bottom:10px;padding:14px 16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-weight:600;font-size:14px">${s.name} <span class="tag tag-b" style="margin-left:6px">${s.slots.length} block${s.slots.length>1?'s':''}</span></div>
+            <div style="display:flex;gap:6px">
+              <button class="btn-g btn-xs" onclick="loadSched('${s.name}')">Edit</button>
+              <button class="btn-d btn-xs" onclick="delSched('${s.name}')">Delete</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${sorted.map(sl=>`<div style="background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r);padding:4px 10px;font-size:12px">
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--text3)">${fmtTime(sl.start)}–${fmtTime(sl.end)}</span>
+              <span style="color:${CAT_C[sl.cat]||'#fff'};margin-left:6px">${sl.task}</span>
+            </div>`).join('')}
+          </div>
+        </div>`;
+      }).join('');
+  }catch(e){el.innerHTML='<div style="font-size:13px;color:var(--red)">'+e.message+'</div>';}
+}
+
+async function loadSched(name){
+  const scheds=await GET('/schedules/'+currentUser.username);
+  const s=scheds.find(x=>x.name===name);
+  currentSlots=[...(s?.slots||[])];
+  document.getElementById('sched-name').value=name;
+  renderSlotsUI();switchST('daily');
+}
+async function delSched(name){
+  if(!confirm('Delete "'+name+'"?'))return;
+  await DEL('/schedules/'+currentUser.username+'/'+encodeURIComponent(name));
+  renderSavedScheds();toast('Deleted','amber');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  WEEKLY PLANS
+// ─────────────────────────────────────────────────────────────
+async function renderWDGrid(){
+  const c=document.getElementById('wd-grid');if(!c)return;
+  const scheds=await GET('/schedules/'+currentUser.username);
+  c.innerHTML=DAYS.map((d,i)=>`<div>
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px">${d}</div>
+    <select id="wd-${i}" style="font-size:11px;padding:7px 4px">
+      <option value="">rest</option>
+      ${scheds.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
+    </select>
+  </div>`).join('');
+}
+
+async function saveWeeklyPlan(){
+  const name=document.getElementById('wp-name').value.trim();
+  if(!name){document.getElementById('wp-name').focus();return;}
+  const days={};
+  for(let i=0;i<7;i++)days[i]=document.getElementById('wd-'+i)?.value||'';
+  if(!Object.values(days).some(v=>v)){toast('Assign at least one schedule','amber');return;}
+  try{
+    await POST('/weeklyplans',{username:currentUser.username,name,days});
+    renderSavedWPs();toast('Weekly plan saved to MongoDB ✓');
+  }catch(e){toast(e.message,'red');}
+}
+
+async function renderSavedWPs(){
+  const el=document.getElementById('saved-wps');if(!el)return;
+  el.innerHTML='<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:500;margin-top:16px">Saved weekly plans <span class="spin"></span></div>';
+  try{
+    const plans=await GET('/weeklyplans/'+currentUser.username);
+    if(!plans.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);margin-top:12px">No weekly plans saved.</div>';return;}
+    el.innerHTML='<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:500;margin-top:16px">Saved weekly plans <span class="tag tag-g">'+plans.length+' in MongoDB</span></div>'
+      +plans.map(p=>`<div class="card" style="margin-bottom:8px;padding:14px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-weight:600">${p.name}</span>
+          <button class="btn-d btn-xs" onclick="delWP('${p.name}')">Delete</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">
+          ${DAYS.map((d,i)=>`<div style="text-align:center">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:3px">${d}</div>
+            <div style="font-size:11px;color:${(p.days||{})[i]?'var(--accent2)':'var(--text3)'};padding:4px 2px;background:var(--bg4);border-radius:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${(p.days||{})[i]||'—'}</div>
+          </div>`).join('')}
+        </div></div>`).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--red);font-size:13px">'+e.message+'</div>';}
+}
+
+async function delWP(name){
+  if(!confirm('Delete "'+name+'"?'))return;
+  await DEL('/weeklyplans/'+currentUser.username+'/'+encodeURIComponent(name));
+  renderSavedWPs();toast('Deleted','amber');
+}
+
+async function loadWPsForSelect(){
+  const plans=await GET('/weeklyplans/'+currentUser.username);
+  const el=document.getElementById('ap-plan');if(!el)return;
+  el.innerHTML='<option value="">-- choose plan --</option>'+plans.map(p=>`<option>${p.name}</option>`).join('');
+}
+
+function setDefaultDates(){
+  const now=new Date(),end=new Date(now);end.setFullYear(end.getFullYear()+1);
+  const fmt=d=>d.toISOString().slice(0,10);
+  const f=document.getElementById('ap-from'),t=document.getElementById('ap-to');
+  if(f)f.value=fmt(now);if(t)t.value=fmt(end);
+}
+
+async function applyCalendar(){
+  const plan=document.getElementById('ap-plan').value;
+  const from=document.getElementById('ap-from').value;
+  const to=document.getElementById('ap-to').value;
+  const repeat=document.getElementById('ap-repeat').value;
+  if(!plan||!from||!to){toast('Fill in all fields','amber');return;}
+  loading('btn-apply',true);
+  try{
+    const[wps,scheds]=await Promise.all([
+      GET('/weeklyplans/'+currentUser.username),
+      GET('/schedules/'+currentUser.username)
+    ]);
+    const wp=wps.find(p=>p.name===plan);if(!wp){toast('Plan not found','red');return;}
+    const schedMap={};scheds.forEach(s=>schedMap[s.name]=s.slots||[]);
+    const cur=new Date(from),end=new Date(to);
+    let count=0;
+    const promises=[];
+    while(cur<=end){
+      const dow=cur.getDay(),schedName=(wp.days||{})[dow];
+      const dk=cur.toISOString().slice(0,10);
+      if(schedName&&schedMap[schedName]){
+        const tasks={};schedMap[schedName].forEach(s=>{tasks[s.id]=null;});
+        promises.push(POST('/tracker',{username:currentUser.username,date:dk,sched:schedName,slots:schedMap[schedName],tasks}));
+        count++;
+      }
+      cur.setDate(cur.getDate()+1);
+    }
+    await Promise.all(promises);
+    await POST('/appliedranges',{username:currentUser.username,plan,from,to,repeat});
+    renderApplied();
+    toast('Applied '+count+' days to MongoDB ✓');
+  }catch(e){toast(e.message,'red');}
+  loading('btn-apply',false,'Apply to calendar');
+}
+
+async function renderApplied(){
+  const el=document.getElementById('applied-list');if(!el)return;
+  try{
+    const ranges=await GET('/appliedranges/'+currentUser.username);
+    if(!ranges.length){el.innerHTML='<div style="font-size:13px;color:var(--text3)">No calendar ranges applied yet.</div>';return;}
+    el.innerHTML='<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:500">Applied ranges</div>'
+      +ranges.map(r=>`<div class="card-flat" style="margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="tag tag-p">${r.plan}</span>
+        <span style="font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--text2)">${r.from} → ${r.to}</span>
+        <span class="tag tag-a">${r.repeat}</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:auto">${fmtDT(r.appliedAt)}</span>
+      </div>`).join('');
+  }catch(e){}
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TRACKER
+// ─────────────────────────────────────────────────────────────
+function navW(d){wkOffset+=d;renderTracker();}
+
+async function renderTracker(){
+  const dates=getWkDates(wkOffset);
+  const today=todayStr();
+  const d0=new Date(dates[0]+'T12:00:00'),d6=new Date(dates[6]+'T12:00:00');
+  document.getElementById('wk-lbl').textContent=
+    d0.toLocaleDateString('en',{month:'short',day:'numeric'})+' – '+
+    d6.toLocaleDateString('en',{month:'short',day:'numeric',year:'numeric'});
+
+  const container=document.getElementById('tracker-view');
+  container.innerHTML='<div style="text-align:center;padding:30px"><span class="spin"></span> Loading from MongoDB…</div>';
+
+  let docs=[];
+  try{docs=await GET('/tracker/'+currentUser.username+'?dates='+dates.join(','));}
+  catch(e){container.innerHTML='<div style="color:var(--red);font-size:13px;padding:16px">'+e.message+'</div>';return;}
+
+  const tdata={};docs.forEach(d=>tdata[d.date]=d);
+
+  // Week summary
+  let wTot=0,wDone=0;
+  dates.forEach(dt=>{const d=tdata[dt];if(!d)return;Object.values(d.tasks||{}).forEach(v=>{if(v===true){wTot++;wDone++;}else if(v===false)wTot++;});});
+  const wPct=wTot?Math.round(wDone/wTot*100):0;
+  const wPc=wPct>=80?'var(--green)':wPct>=50?'var(--amber)':'var(--red)';
+
+  let html=`<div class="card" style="margin-bottom:18px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:16px 20px">
+    <div>
+      <div style="font-size:12px;color:var(--text2)">Week consistency</div>
+      <div style="font-size:34px;font-weight:600;font-family:'JetBrains Mono',monospace;color:${wPc};line-height:1.1">${wPct}%</div>
+    </div>
+    <div style="flex:1;min-width:120px">
+      <div class="prog" style="height:8px;margin-bottom:6px"><div class="prog-f" style="width:${wPct}%;background:${wPc}"></div></div>
+      <div style="font-size:12px;color:var(--text2)">${wDone} done · ${wTot-wDone} missed · ${wTot} total</div>
+    </div>
+    <div style="display:flex;gap:16px">
+      <div style="text-align:center"><div style="font-size:24px;font-weight:600;color:var(--green);font-family:'JetBrains Mono',monospace">${wDone}</div><div style="font-size:11px;color:var(--text3)">Done</div></div>
+      <div style="text-align:center"><div style="font-size:24px;font-weight:600;color:var(--red);font-family:'JetBrains Mono',monospace">${wTot-wDone}</div><div style="font-size:11px;color:var(--text3)">Missed</div></div>
+    </div>
+  </div>`;
+
+  dates.forEach(dateStr=>{
+    const d=new Date(dateStr+'T12:00:00');
+    const data=tdata[dateStr];
+    const isFuture=dateStr>today,isToday=dateStr===today;
+    const dayDone=data?Object.values(data.tasks||{}).filter(v=>v===true).length:0;
+    const dayTot=data?Object.values(data.tasks||{}).filter(v=>v!==null).length:0;
+    const dayPct=dayTot?Math.round(dayDone/dayTot*100):0;
+    const dayPc=dayPct>=80?'var(--green)':dayPct>=50?'var(--amber)':'var(--red)';
+
+    html+=`<div class="day-panel${isToday?' today':''}">
+      <div class="day-header-row">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:15px;font-weight:600;color:${isToday?'var(--accent2)':'var(--text)'}">${DAYS_FULL[d.getDay()]}</span>
+          <span style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">${d.toLocaleDateString('en',{month:'short',day:'numeric'})}</span>
+          ${isToday?'<span class="tag tag-p">Today</span>':''}
+          ${isFuture?'<span class="tag" style="background:var(--bg4);color:var(--text3)">Upcoming</span>':''}
+        </div>
+        <div style="font-size:12px">
+          ${data?`<span style="font-weight:600;color:${dayPc};font-family:'JetBrains Mono',monospace">${dayPct}%</span> <span style="color:var(--text2)">${data.sched}</span>`:'<span style="color:var(--text3)">Rest day</span>'}
+        </div>
+      </div>`;
+
+    if(!data){
+      html+=`<div style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">No schedule for this day</div>`;
+    }else{
+      const sortedSlots=[...(data.slots||[])].sort((a,b)=>a.start.localeCompare(b.start));
+      sortedSlots.forEach(slot=>{
+        const v=data.tasks[slot.id];
+        const done=v===true,missed=v===false;
+        const cls='check-item'+(done?' done':missed?' missed':isFuture?' future':'');
+        const c=CAT_C[slot.cat]||'var(--accent2)';
+        html+=`<div class="${cls}" onclick="toggleTask('${dateStr}','${slot.id}')">
+          <div class="checkbox">${done?'✓':missed?'✗':''}</div>
+          <div class="check-label">
+            <div class="check-name">${slot.task}</div>
+            <div class="check-time-row"><span style="color:${c}">${CAT_L[slot.cat]||slot.cat}</span> &nbsp;${fmtTime(slot.start)} – ${fmtTime(slot.end)}</div>
+          </div>
+          ${done?'<span class="check-badge" style="background:var(--green2);color:var(--green)">Done ✓</span>':''}
+          ${missed?'<span class="check-badge" style="background:#5a2010;color:var(--red)">Missed ✗</span>':''}
+          ${!done&&!missed&&!isFuture?'<span style="font-size:11px;color:var(--text3)">tap</span>':''}
+        </div>`;
+      });
+    }
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+
+async function toggleTask(dateStr,slotId){
+  if(dateStr>todayStr())return;
+  try{
+    const docs=await GET('/tracker/'+currentUser.username+'?dates='+dateStr);
+    if(!docs.length)return;
+    const doc=docs[0];
+    const cur=doc.tasks[slotId];
+    doc.tasks[slotId]=cur===null?true:cur===true?false:null;
+    await PATCH('/tracker/'+currentUser.username+'/'+dateStr,{tasks:doc.tasks});
+    renderTracker();
+  }catch(e){toast(e.message,'red');}
+}
+
+// ─────────────────────────────────────────────────────────────
+//  INSIGHTS
+// ─────────────────────────────────────────────────────────────
+async function renderInsights(){
+  const el=document.getElementById('ins-content');if(!el)return;
+  el.innerHTML='<div style="padding:30px;text-align:center"><span class="spin"></span> Loading from MongoDB…</div>';
+  const now=new Date();let dates=[];
+  if(insPeriod==='week')dates=getWkDates(0);
+  else if(insPeriod==='month'){const y=now.getFullYear(),m=now.getMonth(),last=new Date(y,m+1,0).getDate();for(let i=1;i<=last;i++)dates.push(y+'-'+S2(m+1)+'-'+S2(i));}
+  else{const y=now.getFullYear();for(let m=0;m<12;m++){const last=new Date(y,m+1,0).getDate();for(let d=1;d<=last;d++)dates.push(y+'-'+S2(m+1)+'-'+S2(d));}}
+
+  try{
+    const docs=await GET('/tracker/'+currentUser.username+'?dates='+dates.join(','));
+    const tdata={};docs.forEach(d=>tdata[d.date]=d);
+    const{tot,dn}=calcStats(tdata,dates);
+    const pct=tot?Math.round(dn/tot*100):0;
+    const pc=pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+
+    let bd='';
+    if(insPeriod==='month'){
+      const wks={};dates.forEach(d=>{const w=getWN(new Date(d+'T12:00:00'));if(!wks[w])wks[w]=[];wks[w].push(d);});
+      bd='<div class="card" style="margin-top:16px"><div style="font-size:13px;color:var(--text2);margin-bottom:14px;font-weight:500">Week by week</div>';
+      Object.entries(wks).forEach(([w,wd])=>{const s=calcStats(tdata,wd);const c=s.pct>=80?'#00b894':s.pct>=50?'#fdcb6e':'#e17055';
+        bd+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="font-size:12px;color:var(--text2);width:44px;font-family:'JetBrains Mono',monospace">Wk ${w}</div><div class="prog" style="flex:1"><div class="prog-f" style="width:${s.pct}%;background:${c}"></div></div><div style="font-size:13px;font-weight:600;color:${c};width:42px;text-align:right;font-family:'JetBrains Mono',monospace">${s.pct}%</div><div style="font-size:11px;color:var(--text3);min-width:60px">${s.dn}/${s.tot} tasks</div></div>`;
+      });bd+='</div>';
+    }else if(insPeriod==='year'){
+      const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const y=now.getFullYear();
+      bd='<div class="card" style="margin-top:16px"><div style="font-size:13px;color:var(--text2);margin-bottom:14px;font-weight:500">Month by month</div>';
+      MO.forEach((mo,mi)=>{const last=new Date(y,mi+1,0).getDate();const md=[];for(let d=1;d<=last;d++)md.push(y+'-'+S2(mi+1)+'-'+S2(d));
+        const s=calcStats(tdata,md);const c=s.pct>=80?'#00b894':s.pct>=50?'#fdcb6e':'#e17055';
+        bd+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="font-size:12px;color:var(--text2);width:32px">${mo}</div><div class="prog" style="flex:1"><div class="prog-f" style="width:${s.pct}%;background:${c}"></div></div><div style="font-size:13px;font-weight:600;color:${c};width:42px;text-align:right;font-family:'JetBrains Mono',monospace">${s.tot?s.pct+'%':'—'}</div><div style="font-size:11px;color:var(--text3);min-width:60px">${s.tot?s.dn+'/'+s.tot:''}</div></div>`;
+      });bd+='</div>';
+      bd+='<div class="card" style="margin-top:16px"><div style="font-size:13px;color:var(--text2);margin-bottom:12px;font-weight:500">Yearly heatmap</div><div style="display:flex;flex-wrap:wrap;gap:2px">';
+      dates.forEach(ds=>{const d=tdata[ds];let col='var(--bg4)';if(d){const vs=Object.values(d.tasks||{});const dn2=vs.filter(v=>v===true).length,tt=vs.filter(v=>v!==null).length;const p=tt?dn2/tt:0;col=p>=.8?'#00634f':p>=.5?'#6b4f00':p>0?'#6b2a1a':'var(--bg4)';}
+        bd+=`<div style="width:11px;height:11px;border-radius:2px;background:${col}" title="${ds}"></div>`;
+      });
+      bd+='</div><div style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:11px;color:var(--text3)">Less ';
+      ['var(--bg4)','#6b2a1a','#6b4f00','#00634f'].forEach(c=>bd+=`<div style="width:11px;height:11px;border-radius:2px;background:${c}"></div>`);
+      bd+=' More</div></div>';
+    }
+
+    el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Consistency</div><div class="stat-num" style="color:${pc}">${pct}%</div></div>
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Completed</div><div class="stat-num" style="color:var(--green)">${dn}</div></div>
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Missed</div><div class="stat-num" style="color:var(--red)">${tot-dn}</div></div>
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Total tasks</div><div class="stat-num">${tot}</div></div>
+    </div>
+    <div class="card"><div style="font-size:13px;color:var(--text2);margin-bottom:8px;font-weight:500">Overall</div>
+      <div class="prog" style="height:10px"><div class="prog-f" style="width:${pct}%;background:${pc}"></div></div>
+      <div style="font-size:12px;color:var(--text2);margin-top:6px">${dn} completed out of ${tot} total</div>
+    </div>${bd}`;
+  }catch(e){el.innerHTML='<div style="color:var(--red);font-size:13px;padding:16px">'+e.message+'</div>';}
+}
+
+function calcStats(tdata,dates){
+  let tot=0,dn=0;
+  dates.forEach(d=>{const data=tdata[d];if(!data)return;Object.values(data.tasks||{}).forEach(v=>{if(v===true){tot++;dn++;}else if(v===false)tot++;});});
+  return{tot,dn,pct:tot?Math.round(dn/tot*100):0};
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ADMIN
+// ─────────────────────────────────────────────────────────────
+let _adm={users:[],schedules:[],tracker:[]};
+
+async function loadAdmin(){
+  document.getElementById('adm-stats').innerHTML='<div style="grid-column:1/-1;padding:16px;text-align:center"><span class="spin"></span> Fetching from MongoDB Atlas…</div>';
+  try{
+    const[stats,users,schedules,tracker]=await Promise.all([
+      GET('/admin/stats'),GET('/admin/users'),GET('/admin/schedules'),GET('/admin/tracker')
+    ]);
+    _adm={users,schedules,tracker};
+    const pc=stats.globalPct>=80?'var(--green)':stats.globalPct>=50?'var(--amber)':'var(--red)';
+    document.getElementById('adm-stats').innerHTML=`
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Total users</div><div class="stat-num" style="color:var(--accent)">${stats.users}</div></div>
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Schedules</div><div class="stat-num">${stats.schedules}</div></div>
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Weekly plans</div><div class="stat-num">${stats.weeklyplans}</div></div>
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Tracker days</div><div class="stat-num">${stats.trackerdays}</div></div>
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Tasks done</div><div class="stat-num" style="color:var(--green)">${stats.doneTasks}</div></div>
+      <div class="stat-card"><div style="font-size:12px;color:var(--text2)">Global consistency</div><div class="stat-num" style="color:${pc}">${stats.globalPct}%</div></div>`;
+    renderAdmContent();
+  }catch(e){
+    document.getElementById('adm-stats').innerHTML=`<div style="grid-column:1/-1;color:var(--red);font-size:13px;padding:16px;background:var(--red2);border-radius:var(--r)">Cannot reach backend: ${e.message}</div>`;
+  }
+}
+
+function renderAdmContent(){
+  const el=document.getElementById('adm-content');if(!el)return;
+  if(admTab==='users'){
+    if(!_adm.users.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:16px">No users yet.</div>';return;}
+    el.innerHTML=`<div class="card" style="padding:0;overflow:hidden;overflow-x:auto">
+      <table class="tbl"><thead><tr><th>Username</th><th>Name</th><th>Joined</th><th>Last login</th><th></th></tr></thead>
+      <tbody>${_adm.users.map(u=>`<tr>
+        <td style="font-family:'JetBrains Mono',monospace;color:var(--accent2)">${u.username}</td>
+        <td style="font-weight:500">${u.name||'—'}</td>
+        <td style="color:var(--text2);font-size:12px">${u.createdAt?fmtDT(u.createdAt):'—'}</td>
+        <td style="color:var(--text2);font-size:12px">${u.lastLogin?fmtDT(u.lastLogin):'—'}</td>
+        <td><button class="btn-d btn-xs" onclick="deleteUser('${u.username}')">Delete</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+  }else if(admTab==='schedules'){
+    if(!_adm.schedules.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:16px">No schedules yet.</div>';return;}
+    el.innerHTML=`<div class="card" style="padding:0;overflow:hidden;overflow-x:auto">
+      <table class="tbl"><thead><tr><th>User</th><th>Schedule</th><th>Blocks</th><th>Tasks</th></tr></thead>
+      <tbody>${_adm.schedules.map(s=>`<tr>
+        <td style="font-family:'JetBrains Mono',monospace;color:var(--accent2)">${s.username}</td>
+        <td style="font-weight:500">${s.name}</td>
+        <td><span class="tag tag-b">${(s.slots||[]).length}</span></td>
+        <td style="font-size:12px;color:var(--text2)">${(s.slots||[]).map(x=>`<span style="color:${CAT_C[x.cat]||'#fff'}">${x.task}</span>`).join(', ')}</td>
+      </tr>`).join('')}</tbody></table></div>`;
+  }else{
+    if(!_adm.tracker.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:16px">No tracker data yet.</div>';return;}
+    el.innerHTML=`<div class="card" style="padding:0;overflow:hidden;overflow-x:auto">
+      <table class="tbl"><thead><tr><th>User</th><th>Date</th><th>Schedule</th><th>Done/Total</th><th>Consistency</th></tr></thead>
+      <tbody>${_adm.tracker.map(d=>{
+        const vals=Object.values(d.tasks||{});
+        const dn=vals.filter(v=>v===true).length,tt=vals.filter(v=>v!==null).length;
+        const p=tt?Math.round(dn/tt*100):0;const pc=p>=80?'var(--green)':p>=50?'var(--amber)':'var(--red)';
+        return`<tr>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--accent2)">${d.username}</td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${d.date}</td>
+          <td style="color:var(--text2)">${d.sched}</td>
+          <td style="color:var(--green)">${dn}/${tt}</td>
+          <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${pc}">${tt?p+'%':'—'}</td>
+        </tr>`;
+      }).join('')}</tbody></table></div>`;
+  }
+}
+
+async function deleteUser(u){
+  if(!confirm('Delete user "'+u+'" and ALL their data? This cannot be undone.'))return;
+  try{
+    await DEL('/admin/users/'+u);
+    loadAdmin();toast('User deleted','amber');
+  }catch(e){toast(e.message,'red');}
+}
+</script>
+</body>
+</html>
