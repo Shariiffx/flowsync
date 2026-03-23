@@ -310,7 +310,7 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px;font-wei
 //  LOCAL STORAGE MOCK BACKEND
 //  Replaces all API calls with localStorage — works fully offline
 // ─────────────────────────────────────────────────────────────
-const API = ''; // unused — all calls intercepted below
+const API = 'https://flowsync-api.onrender.com'; // unused — all calls intercepted below
 
 const DB = {
   get(key) { try { return JSON.parse(localStorage.getItem('fs_'+key)||'null'); } catch{return null;} },
