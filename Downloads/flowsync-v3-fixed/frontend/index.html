@@ -434,15 +434,20 @@ async function checkServer(){
   const dot=document.getElementById('db-dot');
   const lbl=document.getElementById('db-label');
   const srv=document.getElementById('srv-status');
+  dot.style.background='var(--amber)';
+  lbl.textContent='Connecting to MongoDB Atlas…';
+  if(srv)srv.innerHTML='<span style="color:var(--amber)">● Connecting to server…</span>';
   try{
     const d=await GET('/health');
     dot.style.background='var(--green)';
     lbl.textContent='✅ MongoDB Atlas connected — ' + d.db;
     if(srv)srv.innerHTML='<span style="color:var(--green)">● Server online — MongoDB Atlas</span>';
   }catch(e){
-    dot.style.background='var(--red)';
-    lbl.textContent='❌ Backend offline — run: node server.js';
-    if(srv)srv.innerHTML='<span style="color:var(--red)">● Cannot connect to server. Run: node server.js</span>';
+    dot.style.background='var(--amber)';
+    lbl.textContent='⏳ Server is waking up — please wait a moment…';
+    if(srv)srv.innerHTML='<span style="color:var(--amber)">● Server waking up — please wait a moment and try again</span>';
+    // Render free tier sleeps — retry after 15s
+    setTimeout(checkServer, 15000);
   }
 }
 checkServer();
