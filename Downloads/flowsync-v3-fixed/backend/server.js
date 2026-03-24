@@ -66,9 +66,31 @@ MongoClient.connect(MONGO_URI)
     const demoDeleted = await db.collection('users').deleteOne({ username: 'demo' });
     if (demoDeleted.deletedCount) console.log('🗑️   Removed legacy demo user');
 
-    app.listen(PORT, () =>
-      console.log('🚀  FlowSync API  →  http://localhost:' + PORT)
-    );
+    app.listen(PORT, () => {
+      console.log('🚀  FlowSync API  →  http://localhost:' + PORT);
+
+      // ── SELF-PING (keep-alive on Render free tier) ───────────────────
+      // Pings the health endpoint every 10 minutes so Render never puts
+      // the server to sleep. Uses the RENDER_EXTERNAL_URL env var that
+      // Render sets automatically, falling back to localhost for local dev.
+      const SELF_URL = process.env.RENDER_EXTERNAL_URL
+        ? process.env.RENDER_EXTERNAL_URL.replace(/\/$/, '')
+        : `http://localhost:${PORT}`;
+
+      setInterval(async () => {
+        try {
+          const res = await fetch(`${SELF_URL}/api/health`);
+          if (res.ok) {
+            console.log('🏓  Self-ping OK —', new Date().toISOString());
+          } else {
+            console.log('⚠️   Self-ping non-OK status:', res.status);
+          }
+        } catch (e) {
+          console.log('⚠️   Self-ping failed:', e.message);
+        }
+      }, 10 * 60 * 1000); // every 10 minutes
+      // ────────────────────────────────────────────────────────────────
+    });
   })
   .catch(err => {
     console.error('❌  MongoDB connection failed:', err.message);
@@ -357,7 +379,7 @@ app.post('/api/appliedranges', async (req, res) => {
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const [users, schedules, weeklyplans, trackerdays] = await Promise.all([
-      col('users').countDocuments({ role: { $ne: 'admin' } }),  // exclude admins from count
+      col('users').countDocuments({ role: { $ne: 'admin' } }),
       col('schedules').countDocuments(),
       col('weeklyplans').countDocuments(),
       col('trackerdata').countDocuments(),
